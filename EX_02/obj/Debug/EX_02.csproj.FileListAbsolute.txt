@@ -1,0 +1,10 @@
+C:\Users\ACER\source\repos\EX_02\EX_02\obj\Debug\EX_02.csproj.AssemblyReference.cache
+C:\Users\ACER\source\repos\EX_02\EX_02\obj\Debug\EX_02.Form1.resources
+C:\Users\ACER\source\repos\EX_02\EX_02\obj\Debug\EX_02.Properties.Resources.resources
+C:\Users\ACER\source\repos\EX_02\EX_02\obj\Debug\EX_02.csproj.GenerateResource.cache
+C:\Users\ACER\source\repos\EX_02\EX_02\obj\Debug\EX_02.csproj.CoreCompileInputs.cache
+C:\Users\ACER\source\repos\EX_02\EX_02\bin\Debug\EX_02.exe.config
+C:\Users\ACER\source\repos\EX_02\EX_02\bin\Debug\EX_02.exe
+C:\Users\ACER\source\repos\EX_02\EX_02\bin\Debug\EX_02.pdb
+C:\Users\ACER\source\repos\EX_02\EX_02\obj\Debug\EX_02.exe
+C:\Users\ACER\source\repos\EX_02\EX_02\obj\Debug\EX_02.pdb
