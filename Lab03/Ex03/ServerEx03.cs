@@ -36,7 +36,10 @@ namespace Lab03.Ex03
             while (socket.Connected)
             {
                 string text = reader.ReadToEnd();
-                lvMessage.Items.Add($"{text}");
+                lvMessage.Items.Add(text);
+
+                if (reader.EndOfStream == true)
+                    reader.Close();
             }
 
             stream.Close();

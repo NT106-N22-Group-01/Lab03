@@ -33,6 +33,8 @@ namespace Lab03.Ex03
             Stream stream = tcpClient.GetStream();
             var writer = new StreamWriter(stream);
             writer.Write(tbMessage.Text.Trim());
+            writer.Flush();
+            writer.Close();
             stream.Close();
         }
 
