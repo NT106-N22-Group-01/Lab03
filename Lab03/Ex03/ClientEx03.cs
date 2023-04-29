@@ -1,81 +1,100 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Lab03.Ex03
 {
     public partial class ClientEx03 : Form
     {
-        TcpClient tcpClient = new TcpClient();
-        public ClientEx03()
+		private TcpClient tcpClient = new TcpClient();
+		private Stream stream;
+		private StreamWriter writer;
+		private bool isConnected = false;
+
+		public ClientEx03()
         {
             InitializeComponent();
         }
 
-        private void connect()
+        private void Connect()
         {
-            tcpClient = new TcpClient();
-            tcpClient.Connect(IPAddress.Parse("127.0.0.1"), 8000);
-            btnConnect.Enabled = false;
-            btnDisconnect.Enabled = true;
-        }
+			try
+			{
+				tcpClient.Connect(IPAddress.Loopback, 8000);
+				stream = tcpClient.GetStream();
+				writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
+				isConnected = true;
+				UpdateControls();
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+		}
 
-        private void send()
+        private void Send()
         {
-            Stream stream = tcpClient.GetStream();
-            var writer = new StreamWriter(stream);
-            writer.Write(tbMessage.Text.Trim());
-            writer.Flush();
-            writer.Close();
-            stream.Close();
-        }
+			if (isConnected)
+			{
+				try
+				{
+					var message = tbMessage.Text;
+					writer.WriteLine(message);
+					tbMessage.Text = "";
+				}
+				catch (Exception ex)
+				{
+					MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				}
+			}
+		}
 
-        private void disconnect()
+        private void Disconnect()
         {
-            tcpClient.Close();
-            btnConnect.Enabled = true;
-            btnSend.Enabled = false;
-            btnDisconnect.Enabled = false;
-        }
+			if (!isConnected)
+				return;
+			try
+			{
+				tcpClient.Close();
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+			isConnected = false;
+			UpdateControls();
+		}
 
         private void btnConnect_Click(object sender, EventArgs e)
         {
-            this.connect();
+            Connect();
         }
 
         private void btnSend_Click(object sender, EventArgs e)
         {
-            this.send();
+            Send();
         }
 
         private void btnDisconnect_Click(object sender, EventArgs e)
         {
-            this.disconnect();
+            Disconnect();
         }
 
         private void ClientEx03_Load(object sender, EventArgs e)
         {
-            btnConnect.Enabled = true;
-            btnSend.Enabled = false;
-            btnDisconnect.Enabled = false;
-        }
+			UpdateControls();
+		}
 
         private void tbMessage_TextChanged(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(tbMessage.Text.Trim()))
-                btnSend.Enabled = false;
-            
-            if (string.IsNullOrEmpty (tbMessage.Text.Trim()) == false)
-                btnSend.Enabled = true;
-                
-        }
-    }
+            UpdateControls();
+		}
+
+		private void UpdateControls()
+		{
+			btnConnect.Enabled = !isConnected;
+			btnSend.Enabled = isConnected && !string.IsNullOrWhiteSpace(tbMessage.Text);
+			btnDisconnect.Enabled = isConnected;
+		}
+	}
 }
