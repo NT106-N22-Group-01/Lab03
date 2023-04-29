@@ -30,8 +30,6 @@
 		{
 			buttonEx1 = new Button();
 			buttonEx3 = new Button();
-			buttonEx5 = new Button();
-			buttonEx6 = new Button();
 			buttonEx2 = new Button();
 			buttonEx4 = new Button();
 			buttonExit = new Button();
@@ -58,26 +56,6 @@
 			buttonEx3.Text = "Bài 3";
 			buttonEx3.UseVisualStyleBackColor = true;
 			// 
-			// buttonEx5
-			// 
-			buttonEx5.Font = new Font("Open Sans", 12F, FontStyle.Bold, GraphicsUnit.Point);
-			buttonEx5.Location = new Point(222, 257);
-			buttonEx5.Name = "buttonEx5";
-			buttonEx5.Size = new Size(129, 53);
-			buttonEx5.TabIndex = 2;
-			buttonEx5.Text = "Bài 5";
-			buttonEx5.UseVisualStyleBackColor = true;
-			// 
-			// buttonEx6
-			// 
-			buttonEx6.Font = new Font("Open Sans", 12F, FontStyle.Bold, GraphicsUnit.Point);
-			buttonEx6.Location = new Point(484, 257);
-			buttonEx6.Name = "buttonEx6";
-			buttonEx6.Size = new Size(129, 53);
-			buttonEx6.TabIndex = 3;
-			buttonEx6.Text = "Bài 6";
-			buttonEx6.UseVisualStyleBackColor = true;
-			// 
 			// buttonEx2
 			// 
 			buttonEx2.Font = new Font("Open Sans", 12F, FontStyle.Bold, GraphicsUnit.Point);
@@ -97,11 +75,12 @@
 			buttonEx4.TabIndex = 5;
 			buttonEx4.Text = "Bài 4";
 			buttonEx4.UseVisualStyleBackColor = true;
+			buttonEx4.Click += buttonEx4_Click;
 			// 
 			// buttonExit
 			// 
 			buttonExit.Font = new Font("Open Sans", 12F, FontStyle.Bold, GraphicsUnit.Point);
-			buttonExit.Location = new Point(338, 371);
+			buttonExit.Location = new Point(348, 255);
 			buttonExit.Name = "buttonExit";
 			buttonExit.Size = new Size(129, 53);
 			buttonExit.TabIndex = 7;
@@ -113,16 +92,14 @@
 			// 
 			AutoScaleDimensions = new SizeF(10F, 25F);
 			AutoScaleMode = AutoScaleMode.Font;
-			ClientSize = new Size(800, 450);
+			ClientSize = new Size(800, 341);
 			Controls.Add(buttonExit);
 			Controls.Add(buttonEx4);
 			Controls.Add(buttonEx2);
-			Controls.Add(buttonEx6);
-			Controls.Add(buttonEx5);
 			Controls.Add(buttonEx3);
 			Controls.Add(buttonEx1);
 			Name = "MainForm";
-			Text = "Lab 02";
+			Text = "Lab 03";
 			Load += Form1_Load;
 			ResumeLayout(false);
 		}
@@ -131,8 +108,6 @@
 
 		private Button buttonEx1;
 		private Button buttonEx3;
-		private Button buttonEx5;
-		private Button buttonEx6;
 		private Button buttonEx2;
 		private Button buttonEx4;
 		private Button buttonExit;
