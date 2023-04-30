@@ -1,4 +1,4 @@
-﻿namespace Lab03
+﻿namespace Lab03.Ex04
 {
 	partial class Server_04
 	{

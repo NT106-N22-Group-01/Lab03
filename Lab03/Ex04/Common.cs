@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Lab03
+namespace Lab03.Ex04
 {
 	public class ChatPacketSerializationBinder : ISerializationBinder
 	{

@@ -1,7 +1,7 @@
 ﻿using TcpServerClient;
 using System.Collections.Concurrent;
 
-namespace Lab03
+namespace Lab03.Ex04
 {
 	public partial class Server_04 : Form
 	{

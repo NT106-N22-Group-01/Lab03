@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using TcpServerClient;
 
-namespace Lab03
+namespace Lab03.Ex04
 {
 	public partial class Client_04 : Form
 	{
