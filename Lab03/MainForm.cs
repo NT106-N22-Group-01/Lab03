@@ -18,22 +18,22 @@ namespace Lab03
         private void buttonEx01_Click(object sender, EventArgs e)
         {
             this.Hide();
-            var Ex01 = new Ex01();
+            var Ex01 = new task01();
             Ex01.Show();
         }
-
-		private void buttonEx4_Click(object sender, EventArgs e)
-		{
-			this.Hide();
-			var Ex04 = new Landing_04();
-			Ex04.Show();
-		}
 
 		private void buttonEx3_Click(object sender, EventArgs e)
 		{
 			this.Hide();
 			var Ex03 = new Lab03.Ex03.Ex03();
 			Ex03.Show();
+		}
+
+		private void buttonEx4_Click(object sender, EventArgs e)
+		{
+			this.Hide();
+			var Ex04 = new Landing_04();
+			Ex04.Show();
 		}
 
 		private void buttonExit_Click(object sender, EventArgs e)

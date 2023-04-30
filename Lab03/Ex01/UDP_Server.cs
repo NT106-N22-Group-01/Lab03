@@ -1,13 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace Lab03
 {
@@ -32,7 +24,7 @@ namespace Lab03
                 {
                     var receivedResults = await _udpServer.ReceiveAsync();
                     var receivedData = Encoding.UTF8.GetString(receivedResults.Buffer);
-                    viewOutput.Text += $"Received: {receivedData}\r\n";
+                    viewOutput.Text += $"Client: {receivedData}\r\n";
                     await _udpServer.SendAsync(Encoding.UTF8.GetBytes(receivedData), receivedData.Length, receivedResults.RemoteEndPoint);
                 }
             }
