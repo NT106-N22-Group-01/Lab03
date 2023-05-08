@@ -1,5 +1,6 @@
 ﻿using TcpServerClient;
 using System.Collections.Concurrent;
+using Newtonsoft.Json;
 
 namespace Lab03.Ex04
 {
@@ -44,7 +45,7 @@ namespace Lab03.Ex04
 			_server = new STcpServer($"*:{portNumber}");
 			try
 			{
-				_server.Start();
+				_server.StartAsync();
 				serverStartButton.Enabled = false;
 				serverStopButton.Enabled = true;
 				_updateStatusDelegate = new UpdateStatusDelegate(this.UpdateStatus);
@@ -72,24 +73,25 @@ namespace Lab03.Ex04
 
 		private void DataReceived(object sender, DataReceivedEventArgs e)
 		{
-			Object packet = Common.ArraySegmentToObject(e.Data);
-			if (packet is UserConnectionPacket ucp)
-			{
-				_usernames.TryAdd(e.IpPort, ucp.Username);
-				ucp.Users = new List<string>();
-				ucp.Users = _usernames.Values.ToList();
-				List<ListViewItem> items = ucp.Users.Select(item => new ListViewItem(item)).ToList();
-				listViewUsers.Invoke(new Action(() => listViewUsers.Items.Clear()));
-				listViewUsers.Invoke(new Action(() => listViewUsers.Items.AddRange(items.ToArray())));
-				SendToClient(Common.ObjectToArraySegment(ucp));
+			object obj = Common.ArraySegmentToObject(e.Data);
+			ChatPacket packet = obj as ChatPacket;
 
-				this.Invoke(_updateStatusDelegate, new Object[] { $"--- {ucp.Username} vừa tham gia vào phòng chat ---" });
-
-			}
-			else if (packet is ChatPacket chat)
+			if (packet != null)
 			{
-				SendToClient(e.Data);
-				this.Invoke(_updateStatusDelegate, new Object[] { $"{chat.Username} => {chat.ChatMessage}" });
+				switch (packet.Command)
+				{
+					case Cmd.Login:
+						_usernames.TryAdd(e.IpPort, packet.Username);
+						packet.Content = JsonConvert.SerializeObject(_usernames.Values.ToList());
+						UpdateUserList();
+						SendToClient(Common.ObjectToArraySegment(packet));
+						this.Invoke(_updateStatusDelegate, new Object[] { $"--- {packet.Username} vừa tham gia vào phòng chat ---" });
+						break;
+					case Cmd.Message:
+						SendToClient(e.Data);
+						this.Invoke(_updateStatusDelegate, new Object[] { $"{packet.Username} => {packet.Content}" });
+						break;
+				}
 			}
 		}
 
@@ -100,15 +102,12 @@ namespace Lab03.Ex04
 
 			_usernames.TryRemove(e.IpPort, out _);
 
-			UserConnectionPacket ucp = new UserConnectionPacket();
-
-			ucp.Username = username;
-			ucp.IsJoining = false;
-			ucp.Users = _usernames.Values.ToList();
-			List<ListViewItem> items = ucp.Users.Select(item => new ListViewItem(item)).ToList();
-			listViewUsers.Invoke(new Action(() => listViewUsers.Items.Clear()));
-			listViewUsers.Invoke(new Action(() => listViewUsers.Items.AddRange(items.ToArray())));
-			var data = Common.ObjectToArraySegment(ucp);
+			ChatPacket packet = new ChatPacket();
+			packet.Username = username;
+			packet.Command = Cmd.Logout;
+			packet.Content = JsonConvert.SerializeObject(_usernames.Values.ToList());
+			UpdateUserList();
+			var data = Common.ObjectToArraySegment(packet);
 			SendToClient(data);
 			this.Invoke(_updateStatusDelegate, new Object[] { $"--- {username} thoát khỏi phòng chat ---" });
 		}
@@ -142,6 +141,13 @@ namespace Lab03.Ex04
 		void Logger(string msg)
 		{
 			this.Invoke(_updateStatusDelegate, new object[] { msg });
+		}
+
+		private void UpdateUserList() 
+		{
+			List<ListViewItem> items = _usernames.Values.Select(item => new ListViewItem(item)).ToList();
+			listViewUsers.Invoke(new Action(() => listViewUsers.Items.Clear()));
+			listViewUsers.Invoke(new Action(() => listViewUsers.Items.AddRange(items.ToArray())));
 		}
 	}
 }

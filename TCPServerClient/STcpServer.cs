@@ -258,7 +258,7 @@ namespace TcpServerClient
 						_isListening = true;
 					}
 
-					var tcpClient = await _listener.AcceptTcpClientAsync().ConfigureAwait(false);
+					TcpClient tcpClient = await _listener.AcceptTcpClientAsync().ConfigureAwait(false);
 
 					var clientIpPort = tcpClient.Client.RemoteEndPoint.ToString();
 

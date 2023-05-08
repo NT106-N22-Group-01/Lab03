@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using Newtonsoft.Json;
+using System.Collections.Concurrent;
+using System.Net;
 using TcpServerClient;
 
 namespace Lab03.Ex04
@@ -9,6 +11,8 @@ namespace Lab03.Ex04
 		private string _username;
 		private delegate void DisplayMessageDelegate(string message);
 		private DisplayMessageDelegate _displayMessageDelegate = null;
+		private ConcurrentDictionary<string, string> _usernames = new ConcurrentDictionary<string, string>();
+		Dictionary<string, DirectMessage> _directMessageFormList = new Dictionary<string, DirectMessage>();
 
 		public Client_04()
 		{
@@ -98,25 +102,27 @@ namespace Lab03.Ex04
 
 		private void DataReceived(object sender, DataReceivedEventArgs e)
 		{
-			Object packet = Common.ArraySegmentToObject(e.Data);
-			if (packet is UserConnectionPacket ucp)
-			{
-				List<ListViewItem> items = ucp.Users.Select(item => new ListViewItem(item)).ToList();
-				listViewUsers.Invoke(new Action(() => listViewUsers.Items.Clear()));
-				listViewUsers.Invoke(new Action(() => listViewUsers.Items.AddRange(items.ToArray())));
-				if (ucp.IsJoining)
-				{
-					this.Invoke(_displayMessageDelegate, new Object[] { $"--- {ucp.Username} vừa tham gia vào phòng chat ---" });
-				}
-				else
-				{
-					this.Invoke(_displayMessageDelegate, new Object[] { $"--- {ucp.Username} thoát khỏi phòng chat ---" });
-				}
+			object obj = Common.ArraySegmentToObject(e.Data);
+			ChatPacket packet = obj as ChatPacket;
 
-			}
-			if (packet is ChatPacket chat)
+			if (packet != null)
 			{
-				this.Invoke(_displayMessageDelegate, new Object[] { $"{chat.Username} => {chat.ChatMessage}" });
+				switch (packet.Command)
+				{
+					case Cmd.Login:
+						_usernames = JsonConvert.DeserializeObject<ConcurrentDictionary<string, string>>(packet.Content);
+						UpdateClientList();
+						this.Invoke(_displayMessageDelegate, new Object[] { $"--- {packet.Username} vừa tham gia vào phòng chat ---" });
+						break;
+					case Cmd.Message:
+						this.Invoke(_displayMessageDelegate, new Object[] { $"{packet.Username} => {packet.Content}" });
+						break;
+					case Cmd.Logout:
+						_usernames = JsonConvert.DeserializeObject<ConcurrentDictionary<string, string>>(packet.Content);
+						UpdateClientList();
+						this.Invoke(_displayMessageDelegate, new Object[] { $"--- {packet.Username} thoát khỏi phòng chat ---" });
+						break;
+				}
 			}
 		}
 
@@ -129,10 +135,10 @@ namespace Lab03.Ex04
 
 		private void SendJoin()
 		{
-			var ucp = new UserConnectionPacket();
-			ucp.Username = _username;
-			ucp.IsJoining = true;
-			var Data = Common.ObjectToArraySegment(ucp);
+			var packet = new ChatPacket();
+			packet.Username = _username;
+			packet.Command = Cmd.Login;
+			var Data = Common.ObjectToArraySegment(packet);
 			_client.Send(Data.ToArray());
 		}
 
@@ -157,7 +163,8 @@ namespace Lab03.Ex04
 		{
 			var Chat = new ChatPacket();
 			Chat.Username = _username;
-			Chat.ChatMessage = msgTxt.Text;
+			Chat.Command = Cmd.Message;
+			Chat.Content = msgTxt.Text;
 			var Data = Common.ObjectToArraySegment(Chat);
 			try
 			{
@@ -170,6 +177,43 @@ namespace Lab03.Ex04
 			msgTxt.Text = string.Empty;
 			clientSendButton.Enabled = false;
 
+		}
+
+		private void UpdateClientList()
+		{
+			List<ListViewItem> items = _usernames.Values.Select(item => new ListViewItem(item)).ToList();
+			listViewUsers.Invoke(new Action(() => listViewUsers.Items.Clear()));
+			listViewUsers.Invoke(new Action(() => listViewUsers.Items.AddRange(items.ToArray())));
+		}
+
+		private void listViewUsers_DoubleClick(object sender, EventArgs e)
+		{
+			if (listViewUsers.SelectedItems.Count == 1)
+			{
+				var userName = listViewUsers.SelectedItems[0].SubItems[1].Text;
+				OpenDirectMessage(userName);
+			}
+		}
+
+		private DirectMessage OpenDirectMessage(string userName)
+		{
+			DirectMessage form;
+			if  (_directMessageFormList.ContainsKey(userName))
+			{
+				form = _directMessageFormList[userName];
+				if (!form.Created) 
+				{
+					form = new DirectMessage(userName);
+				}
+				form.Show();
+			}
+			else
+			{
+				form = new DirectMessage(userName);
+				_directMessageFormList[userName] = form;
+				form.Show();
+			}
+			return form;
 		}
 	}
 }

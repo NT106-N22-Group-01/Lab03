@@ -187,6 +187,7 @@
 			listViewUsers.Size = new Size(328, 770);
 			listViewUsers.TabIndex = 13;
 			listViewUsers.UseCompatibleStateImageBehavior = false;
+			listViewUsers.DoubleClick += listViewUsers_DoubleClick;
 			// 
 			// Client_04
 			// 

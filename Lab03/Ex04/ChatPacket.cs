@@ -3,6 +3,7 @@
 	public class ChatPacket
 	{
 		public string Username { get; set; }
-		public string ChatMessage { get; set; }
+		public Cmd Command { get; set; }
+		public string Content { get; set; }
 	}
 }
