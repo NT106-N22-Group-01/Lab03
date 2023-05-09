@@ -5,6 +5,7 @@
 		Message = 1,
 		Login = 2,
 		Logout = 3,
-		ServerStop = 4
+		ServerStop = 4,
+		DirectMessage = 5
 	}
 }

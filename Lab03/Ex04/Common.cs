@@ -12,10 +12,6 @@ namespace Lab03.Ex04
 			{
 				return typeof(ChatPacket);
 			}
-			else if (typeName == "UserConnectionPacket")
-			{
-				return typeof(UserConnectionPacket);
-			}
 			return null;
 		}
 
@@ -25,10 +21,6 @@ namespace Lab03.Ex04
 			if (serializedType == typeof(ChatPacket))
 			{
 				typeName = "ChatPacket";
-			}
-			else if (serializedType == typeof(UserConnectionPacket))
-			{
-				typeName = "UserConnectionPacket";
 			}
 			else
 			{

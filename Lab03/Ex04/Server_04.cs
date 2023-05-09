@@ -82,7 +82,7 @@ namespace Lab03.Ex04
 				{
 					case Cmd.Login:
 						_usernames.TryAdd(e.IpPort, packet.Username);
-						packet.Content = JsonConvert.SerializeObject(_usernames.Values.ToList());
+						packet.Content = JsonConvert.SerializeObject(_usernames);
 						UpdateUserList();
 						SendToClient(Common.ObjectToArraySegment(packet));
 						this.Invoke(_updateStatusDelegate, new Object[] { $"--- {packet.Username} vừa tham gia vào phòng chat ---" });
@@ -90,6 +90,14 @@ namespace Lab03.Ex04
 					case Cmd.Message:
 						SendToClient(e.Data);
 						this.Invoke(_updateStatusDelegate, new Object[] { $"{packet.Username} => {packet.Content}" });
+						break;
+					case Cmd.DirectMessage:
+						var DMPacket = JsonConvert.DeserializeObject<DirectMessagePacket>(packet.Content);
+						if (_usernames.Values.Contains(DMPacket.ToUsername)) 
+						{
+							string ipPort = _usernames.FirstOrDefault(x => x.Value == DMPacket.ToUsername).Key;
+							_ = _server.SendAsync(ipPort, e.Data.ToArray());
+						}
 						break;
 				}
 			}
@@ -105,7 +113,7 @@ namespace Lab03.Ex04
 			ChatPacket packet = new ChatPacket();
 			packet.Username = username;
 			packet.Command = Cmd.Logout;
-			packet.Content = JsonConvert.SerializeObject(_usernames.Values.ToList());
+			packet.Content = JsonConvert.SerializeObject(_usernames);
 			UpdateUserList();
 			var data = Common.ObjectToArraySegment(packet);
 			SendToClient(data);

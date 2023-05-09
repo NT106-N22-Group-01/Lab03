@@ -1,21 +1,70 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using Newtonsoft.Json;
+using TcpServerClient;
 
 namespace Lab03.Ex04
 {
 	public partial class DirectMessage : Form
 	{
-		public DirectMessage(string userName)
+		private STcpClient _client;
+		private string _userName;
+		private string _toUserName;
+		private delegate void DisplayMessageDelegate(string message);
+		private DisplayMessageDelegate _displayMessageDelegate = null;
+		public DirectMessage(string userName, string toUserName, STcpClient client)
 		{
 			InitializeComponent();
-			Text = userName;
+			Text = toUserName;
+			_userName = userName;
+			_toUserName = toUserName;
+			_client = client;
+			clientSendButton.Enabled = false;
+			_displayMessageDelegate = new DisplayMessageDelegate(DisplayMessage);
+		}
+
+		private void msgTxt_TextChanged(object sender, EventArgs e)
+		{
+			if (string.IsNullOrEmpty(msgTxt.Text))
+			{
+				clientSendButton.Enabled = false;
+			}
+			else if (_client.IsConnected)
+			{
+				clientSendButton.Enabled = true;
+			}
+		}
+
+		private void clientSendButton_Click(object sender, EventArgs e)
+		{
+			var packet = new ChatPacket();
+			packet.Username = _userName;
+			packet.Command = Cmd.DirectMessage;
+			var directMessage = new DirectMessagePacket();
+			directMessage.ToUsername = _toUserName;
+			directMessage.Message = msgTxt.Text;
+			packet.Content = JsonConvert.SerializeObject(directMessage);
+			var Data = Common.ObjectToArraySegment(packet);
+			_client.Send(Data.ToArray());
+			this.Invoke(_displayMessageDelegate, new Object[] { $"{_userName} => {directMessage.Message}" });
+			msgTxt.Text = string.Empty;
+		}
+
+		public void ReceivedMessage(string message)
+		{
+			this.Invoke(_displayMessageDelegate, new Object[] { $"{_toUserName} => {message}" });
+		}
+
+		private void DisplayMessage(string message)
+		{
+			clientChatView.Text += message + Environment.NewLine;
+		}
+
+		private void DirectMessage_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			if (e.CloseReason == CloseReason.UserClosing)
+			{
+				e.Cancel = true;
+				this.Hide();
+			}
 		}
 	}
 }

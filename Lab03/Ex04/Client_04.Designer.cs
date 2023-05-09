@@ -211,6 +211,7 @@
 			Margin = new Padding(5, 6, 5, 6);
 			Name = "Client_04";
 			Text = "Client";
+			FormClosing += Client_04_FormClosing;
 			Load += Client_Load;
 			ResumeLayout(false);
 			PerformLayout();

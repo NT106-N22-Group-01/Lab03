@@ -12,7 +12,7 @@ namespace Lab03.Ex04
 		private delegate void DisplayMessageDelegate(string message);
 		private DisplayMessageDelegate _displayMessageDelegate = null;
 		private ConcurrentDictionary<string, string> _usernames = new ConcurrentDictionary<string, string>();
-		Dictionary<string, DirectMessage> _directMessageFormList = new Dictionary<string, DirectMessage>();
+		private ConcurrentDictionary<string, DirectMessage> _directMessageFormList = new ConcurrentDictionary<string, DirectMessage>();
 
 		public Client_04()
 		{
@@ -82,12 +82,26 @@ namespace Lab03.Ex04
 
 		private void clientDisconnectButton_Click(object sender, EventArgs e)
 		{
+			ClientDisconnect();
+		}
+
+		private void Client_04_FormClosing(object sender, FormClosingEventArgs e)
+		{
+			ClientDisconnect();
+		}
+
+		private void ClientDisconnect()
+		{
 			Task.Run(() =>
 			{
-				_client.Disconnect();
 				_client.Dispose();
 				_client = null;
+				_usernames.Clear();
 			});
+			foreach (var form in _directMessageFormList.Values)
+			{
+				form.Dispose();
+			}
 			clientConnectButton.Enabled = true;
 			clientDisconnectButton.Enabled = false;
 		}
@@ -121,6 +135,11 @@ namespace Lab03.Ex04
 						_usernames = JsonConvert.DeserializeObject<ConcurrentDictionary<string, string>>(packet.Content);
 						UpdateClientList();
 						this.Invoke(_displayMessageDelegate, new Object[] { $"--- {packet.Username} thoát khỏi phòng chat ---" });
+						break;
+					case Cmd.DirectMessage:
+						var DMPacket = JsonConvert.DeserializeObject<DirectMessagePacket>(packet.Content);
+						var form = OpenDirectMessage(packet.Username);
+						form.ReceivedMessage(DMPacket.Message);
 						break;
 				}
 			}
@@ -190,29 +209,60 @@ namespace Lab03.Ex04
 		{
 			if (listViewUsers.SelectedItems.Count == 1)
 			{
-				var userName = listViewUsers.SelectedItems[0].SubItems[1].Text;
+				var userName = listViewUsers.SelectedItems[0].SubItems[0].Text;
+				if (userName == _username) { return; }
 				OpenDirectMessage(userName);
 			}
 		}
 
-		private DirectMessage OpenDirectMessage(string userName)
+		private DirectMessage OpenDirectMessage(string toUserName)
 		{
-			DirectMessage form;
-			if  (_directMessageFormList.ContainsKey(userName))
+			DirectMessage form = null;
+
+			if (_directMessageFormList.TryGetValue(toUserName, out form))
 			{
-				form = _directMessageFormList[userName];
-				if (!form.Created) 
+				if (!form.IsHandleCreated)
 				{
-					form = new DirectMessage(userName);
+					if (form.InvokeRequired)
+					{
+						form.Invoke(new MethodInvoker(() => form = new DirectMessage(_username, toUserName, _client)));
+					}
+					else
+					{
+						form = new DirectMessage(_username, toUserName, _client);
+					}
 				}
-				form.Show();
+				else if (!form.Visible)
+				{
+					if (form.InvokeRequired)
+					{
+						form.Invoke(new MethodInvoker(() => form.Show()));
+					}
+					else
+					{
+						form.Show();
+					}
+				}
 			}
 			else
 			{
-				form = new DirectMessage(userName);
-				_directMessageFormList[userName] = form;
-				form.Show();
+				if (InvokeRequired)
+				{
+					Invoke(new MethodInvoker(() =>
+					{
+						form = new DirectMessage(_username, toUserName, _client);
+						_directMessageFormList.TryAdd(toUserName, form);
+						form.Show();
+					}));
+				}
+				else
+				{
+					form = new DirectMessage(_username, toUserName, _client);
+					_directMessageFormList.TryAdd(toUserName, form);
+					form.Show();
+				}
 			}
+
 			return form;
 		}
 	}
