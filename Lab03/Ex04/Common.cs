@@ -38,7 +38,7 @@ namespace Lab03.Ex04
 				SerializationBinder = new ChatPacketSerializationBinder()
 			};
 			var json = JsonConvert.SerializeObject(obj, serializerSettings);
-			var bytes = Encoding.UTF8.GetBytes(json);
+			var bytes = Encoding.Unicode.GetBytes(json);
 			return new ArraySegment<byte>(bytes, 0, bytes.Length);
 		}
 
@@ -49,8 +49,32 @@ namespace Lab03.Ex04
 				TypeNameHandling = TypeNameHandling.Objects,
 				SerializationBinder = new ChatPacketSerializationBinder()
 			};
-			var json = Encoding.UTF8.GetString(segment.Array, segment.Offset, segment.Count);
+			var json = Encoding.Unicode.GetString(segment.Array, segment.Offset, segment.Count);
 			return JsonConvert.DeserializeObject(json, serializerSettings);
+		}
+
+		public static string SerializeImage(Image image)
+		{
+			string base64String;
+			using (MemoryStream memoryStream = new MemoryStream())
+			{
+				image.Save(memoryStream, image.RawFormat);
+
+				base64String = Convert.ToBase64String(memoryStream.ToArray());
+
+			}
+			return base64String;
+		}
+
+		public static Image DeserializeImage(string base64String)
+		{
+			byte[] imageBytes = Convert.FromBase64String(base64String);
+
+			using (MemoryStream memoryStream = new MemoryStream(imageBytes))
+			{
+				Image image = Image.FromStream(memoryStream);
+				return image;
+			}
 		}
 	}
 }

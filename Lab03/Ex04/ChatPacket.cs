@@ -9,7 +9,26 @@
 
 	public class DirectMessagePacket
 	{
+		public DirectMessagePacket() { }
+		public DirectMessagePacket(string toUsername, Message message)
+		{
+			ToUsername = toUsername;
+			Message = message;
+		}
+
 		public string ToUsername { get; set; }
-		public string Message { get; set; }
+		public Message Message { get; set; }
+	}
+
+	public class Message
+	{
+		public Message(string content, bool isImage)
+		{
+			Content = content;
+			IsImage = isImage;
+		}
+		public Message() { }
+		public string Content { get; set; }
+		public bool IsImage { get; set; }
 	}
 }

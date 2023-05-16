@@ -8,6 +8,7 @@ namespace Lab03.Ex04
 	{
 		private STcpServer _server = null;
 		private readonly ConcurrentDictionary<string, string> _usernames = new ConcurrentDictionary<string, string>();
+		private List<ArraySegment<Byte>> _temp;
 
 		private delegate void UpdateStatusDelegate(string status);
 		private UpdateStatusDelegate _updateStatusDelegate;
@@ -73,8 +74,29 @@ namespace Lab03.Ex04
 
 		private void DataReceived(object sender, DataReceivedEventArgs e)
 		{
-			object obj = Common.ArraySegmentToObject(e.Data);
+			if (_temp == null)
+				_temp = new List<ArraySegment<byte>>();
+			if (e.Data.Count == 65536)
+			{
+				_temp.Add(e.Data);
+				return;
+			}
+			_temp.Add(e.Data);
+
+			int totalLength = _temp.Sum(segment => segment.Count);
+			byte[] resultArray = new byte[totalLength];
+			int offset = 0;
+			foreach (var segment in _temp)
+			{
+				Array.Copy(segment.Array, segment.Offset, resultArray, offset, segment.Count);
+				offset += segment.Count;
+			}
+			var arraySegment = new ArraySegment<byte>(resultArray);
+
+			object obj = Common.ArraySegmentToObject(arraySegment);
 			ChatPacket packet = obj as ChatPacket;
+			_temp.Clear();
+			_temp = null;
 
 			if (packet != null)
 			{
@@ -88,8 +110,15 @@ namespace Lab03.Ex04
 						this.Invoke(_updateStatusDelegate, new Object[] { $"--- {packet.Username} vừa tham gia vào phòng chat ---" });
 						break;
 					case Cmd.Message:
-						SendToClient(e.Data);
-						this.Invoke(_updateStatusDelegate, new Object[] { $"{packet.Username} => {packet.Content}" });
+						SendToClient(arraySegment);
+						var message = JsonConvert.DeserializeObject<Message>(packet.Content);
+						if (!message.IsImage)
+						{
+							this.Invoke(_updateStatusDelegate, new Object[] { $"{packet.Username} => {message.Content}" });
+						}
+						else
+						{
+						}
 						break;
 					case Cmd.DirectMessage:
 						var DMPacket = JsonConvert.DeserializeObject<DirectMessagePacket>(packet.Content);

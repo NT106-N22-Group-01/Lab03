@@ -42,6 +42,8 @@
 			clientSendButton = new Button();
 			groupBox2 = new GroupBox();
 			listViewUsers = new ListView();
+			buttonSendImage = new Button();
+			groupBox2.SuspendLayout();
 			SuspendLayout();
 			// 
 			// label1
@@ -152,7 +154,7 @@
 			msgTxt.Margin = new Padding(5, 6, 5, 6);
 			msgTxt.Multiline = true;
 			msgTxt.Name = "msgTxt";
-			msgTxt.Size = new Size(831, 92);
+			msgTxt.Size = new Size(808, 92);
 			msgTxt.TabIndex = 10;
 			msgTxt.TextChanged += msgTxt_TextChanged;
 			// 
@@ -170,6 +172,7 @@
 			// 
 			// groupBox2
 			// 
+			groupBox2.Controls.Add(buttonSendImage);
 			groupBox2.Font = new Font("Microsoft Sans Serif", 9.75F, FontStyle.Regular, GraphicsUnit.Point);
 			groupBox2.Location = new Point(48, 663);
 			groupBox2.Margin = new Padding(5, 6, 5, 6);
@@ -188,6 +191,17 @@
 			listViewUsers.TabIndex = 13;
 			listViewUsers.UseCompatibleStateImageBehavior = false;
 			listViewUsers.DoubleClick += listViewUsers_DoubleClick;
+			// 
+			// buttonSendImage
+			// 
+			buttonSendImage.Font = new Font("Open Sans", 11F, FontStyle.Bold, GraphicsUnit.Point);
+			buttonSendImage.Location = new Point(849, 61);
+			buttonSendImage.Name = "buttonSendImage";
+			buttonSendImage.Size = new Size(43, 92);
+			buttonSendImage.TabIndex = 14;
+			buttonSendImage.Text = "...";
+			buttonSendImage.UseVisualStyleBackColor = true;
+			buttonSendImage.Click += buttonSendImage_Click;
 			// 
 			// Client_04
 			// 
@@ -213,6 +227,7 @@
 			Text = "Client";
 			FormClosing += Client_04_FormClosing;
 			Load += Client_Load;
+			groupBox2.ResumeLayout(false);
 			ResumeLayout(false);
 			PerformLayout();
 		}
@@ -233,6 +248,7 @@
 		private System.Windows.Forms.Button clientSendButton;
 		private System.Windows.Forms.GroupBox groupBox2;
 		private ListView listViewUsers;
+		private Button buttonSendImage;
 	}
 }
 

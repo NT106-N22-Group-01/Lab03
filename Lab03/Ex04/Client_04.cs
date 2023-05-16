@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Drawing;
+using System.Windows.Forms;
 using TcpServerClient;
 
 namespace Lab03.Ex04
@@ -8,8 +10,9 @@ namespace Lab03.Ex04
 	public partial class Client_04 : Form
 	{
 		private STcpClient _client = null;
+		private List<ArraySegment<byte>> _temp;
 		private string _username;
-		private delegate void DisplayMessageDelegate(string message);
+		private delegate void DisplayMessageDelegate(string message, Image image);
 		private DisplayMessageDelegate _displayMessageDelegate = null;
 		private ConcurrentDictionary<string, string> _usernames = new ConcurrentDictionary<string, string>();
 		private ConcurrentDictionary<string, DirectMessage> _directMessageFormList = new ConcurrentDictionary<string, DirectMessage>();
@@ -108,16 +111,38 @@ namespace Lab03.Ex04
 
 		private void ServerDisconnected(object sender, ConnectionEventArgs e)
 		{
-			this.Invoke(_displayMessageDelegate, new Object[] { $"--- Mất kết nối đến server ---" });
+			this.Invoke(_displayMessageDelegate, new Object[] { $"--- Mất kết nối đến server ---", null });
 			clientConnectButton.Invoke(new Action(() => clientConnectButton.Enabled = true));
 			clientDisconnectButton.Invoke(new Action(() => clientDisconnectButton.Enabled = false));
 			listViewUsers.Invoke(new Action(() => listViewUsers.Items.Clear()));
 		}
 
+		[STAThread]
 		private void DataReceived(object sender, DataReceivedEventArgs e)
 		{
-			object obj = Common.ArraySegmentToObject(e.Data);
+			if (_temp == null)
+				_temp = new List<ArraySegment<byte>>();
+			if (e.Data.Count == 65536)
+			{
+				_temp.Add(e.Data);
+				return;
+			}
+			_temp.Add(e.Data);
+
+			int totalLength = _temp.Sum(segment => segment.Count);
+			byte[] resultArray = new byte[totalLength];
+			int offset = 0;
+			foreach (var segment in _temp)
+			{
+				Array.Copy(segment.Array, segment.Offset, resultArray, offset, segment.Count);
+				offset += segment.Count;
+			}
+			var arraySegment = new ArraySegment<byte>(resultArray);
+
+			object obj = Common.ArraySegmentToObject(arraySegment);
 			ChatPacket packet = obj as ChatPacket;
+			_temp.Clear();
+			_temp = null;
 
 			if (packet != null)
 			{
@@ -126,15 +151,25 @@ namespace Lab03.Ex04
 					case Cmd.Login:
 						_usernames = JsonConvert.DeserializeObject<ConcurrentDictionary<string, string>>(packet.Content);
 						UpdateClientList();
-						this.Invoke(_displayMessageDelegate, new Object[] { $"--- {packet.Username} vừa tham gia vào phòng chat ---" });
+						this.Invoke(_displayMessageDelegate, new Object[] { $"--- {packet.Username} vừa tham gia vào phòng chat ---", null });
 						break;
 					case Cmd.Message:
-						this.Invoke(_displayMessageDelegate, new Object[] { $"{packet.Username} => {packet.Content}" });
+						var message = JsonConvert.DeserializeObject<Message>(packet.Content);
+						if (!message.IsImage)
+						{
+							this.Invoke(_displayMessageDelegate, new Object[] { $"{packet.Username} => {message.Content}", null });
+						}
+						else
+						{
+							
+							var image = Common.DeserializeImage(message.Content);
+							this.Invoke(_displayMessageDelegate, new Object[] { $"{packet.Username} => ", image });
+						}
 						break;
 					case Cmd.Logout:
 						_usernames = JsonConvert.DeserializeObject<ConcurrentDictionary<string, string>>(packet.Content);
 						UpdateClientList();
-						this.Invoke(_displayMessageDelegate, new Object[] { $"--- {packet.Username} thoát khỏi phòng chat ---" });
+						this.Invoke(_displayMessageDelegate, new Object[] { $"--- {packet.Username} thoát khỏi phòng chat ---", null });
 						break;
 					case Cmd.DirectMessage:
 						var DMPacket = JsonConvert.DeserializeObject<DirectMessagePacket>(packet.Content);
@@ -149,7 +184,7 @@ namespace Lab03.Ex04
 		{
 			this.Invoke(new MethodInvoker(() => clientDisconnectButton.Enabled = true));
 			SendJoin();
-			this.Invoke(_displayMessageDelegate, new Object[] { $"Đã kết nối đến server" });
+			this.Invoke(_displayMessageDelegate, new Object[] { $"Đã kết nối đến server", null });
 		}
 
 		private void SendJoin()
@@ -161,9 +196,26 @@ namespace Lab03.Ex04
 			_client.Send(Data.ToArray());
 		}
 
-		private void DisplayMessage(string message)
+		private void DisplayMessage(string message, Image image)
 		{
-			clientChatView.Text += message + Environment.NewLine;
+			clientChatView.AppendText(message);
+			if (image != null)
+			{
+				Thread t = new Thread((ThreadStart)(() => {
+					Clipboard.SetImage(image);
+				}));
+				t.SetApartmentState(ApartmentState.STA);
+				t.Start();
+				t.Join();
+				clientChatView.SelectionStart = clientChatView.TextLength;
+				clientChatView.SelectionLength = 0;
+				Clipboard.SetImage(image);
+				clientChatView.Paste();
+				Clipboard.Clear();
+			}
+			clientChatView.SelectionStart = clientChatView.TextLength;
+			clientChatView.SelectionLength = 0;
+			clientChatView.AppendText(Environment.NewLine);
 		}
 
 		private void msgTxt_TextChanged(object sender, EventArgs e)
@@ -183,7 +235,8 @@ namespace Lab03.Ex04
 			var Chat = new ChatPacket();
 			Chat.Username = _username;
 			Chat.Command = Cmd.Message;
-			Chat.Content = msgTxt.Text;
+			var message = new Message(msgTxt.Text, false);
+			Chat.Content = JsonConvert.SerializeObject(message);
 			var Data = Common.ObjectToArraySegment(Chat);
 			try
 			{
@@ -195,7 +248,49 @@ namespace Lab03.Ex04
 			}
 			msgTxt.Text = string.Empty;
 			clientSendButton.Enabled = false;
+		}
 
+		private void buttonSendImage_Click(object sender, EventArgs e)
+		{
+			var Chat = new ChatPacket();
+			Chat.Username = _username;
+			Chat.Command = Cmd.Message;
+			var imagePath = GetFilePath();
+			if (imagePath == string.Empty)
+				return;
+			Image image = Image.FromFile(imagePath);
+			var imageJson = Common.SerializeImage(image);
+			var message = new Message(imageJson, true);
+			Chat.Content = JsonConvert.SerializeObject(message);
+			var Data = Common.ObjectToArraySegment(Chat);
+			try
+			{
+				_client.Send(Data.ToArray());
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show("Send Error: " + ex.Message, "TcpClient", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+		}
+
+		private string GetFilePath()
+		{
+			try
+			{
+				var openFileDialog = new OpenFileDialog
+				{
+					Filter = "Image Files(*.jpg; *.jpeg; *.gif; *.bmp)|*.jpg; *.jpeg; *.gif; *.bmp"
+				};
+				if (openFileDialog.ShowDialog() == DialogResult.OK)
+				{
+					return openFileDialog.FileName;
+				}
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+			}
+			return string.Empty;
 		}
 
 		private void UpdateClientList()

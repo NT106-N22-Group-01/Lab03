@@ -38,9 +38,8 @@ namespace Lab03.Ex04
 			var packet = new ChatPacket();
 			packet.Username = _userName;
 			packet.Command = Cmd.DirectMessage;
-			var directMessage = new DirectMessagePacket();
-			directMessage.ToUsername = _toUserName;
-			directMessage.Message = msgTxt.Text;
+			Message message = new Message(msgTxt.Text, false);
+			var directMessage = new DirectMessagePacket(_toUserName, message);
 			packet.Content = JsonConvert.SerializeObject(directMessage);
 			var Data = Common.ObjectToArraySegment(packet);
 			_client.Send(Data.ToArray());
@@ -48,9 +47,9 @@ namespace Lab03.Ex04
 			msgTxt.Text = string.Empty;
 		}
 
-		public void ReceivedMessage(string message)
+		public void ReceivedMessage(Message message)
 		{
-			this.Invoke(_displayMessageDelegate, new Object[] { $"{_toUserName} => {message}" });
+			this.Invoke(_displayMessageDelegate, new Object[] { $"{_toUserName} => {message.Content}" });
 		}
 
 		private void DisplayMessage(string message)
